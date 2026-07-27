@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TextTide - Intelligent Document Analysis</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Document Extraction Libraries -->
+  <!-- PDF.js for reading PDFs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- Mammoth.js for parsing Word (.docx) files -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex font-sans antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- ========================================== -->
+  <!-- COLUMN 1: SMALL SIDEBAR (Persistent)       -->
+  <!-- ========================================== -->
+  <aside class="w-64 bg-slate-950 border-r border-slate-800 flex flex-col justify-between shrink-0 h-screen sticky top-0 z-20">
+    <div class="p-4 space-y-6 overflow-y-auto">
+      
+      <!-- Brand & Small Credits -->
+      <div class="px-2">
+        <div class="flex items-center gap-2 text-indigo-400 font-extrabold text-2xl tracking-tight">
+          <i data-lucide="waves" class="w-7 h-7 text-indigo-500"></i>
+          <span>TextTide</span>
+        </div>
+        <p class="text-[10px] uppercase font-semibold tracking-wider text-slate-500 mt-0.5">by G-3 Capstone Research</p>
+      </div>
+
+      <!-- Main Home Navigation -->
+      <div>
+        <button id="nav-home-btn" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/30">
+          <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+          <span>Drop Files (Home)</span>
+        </button>
+      </div>
+
+      <!-- Auth Container -->
+      <div id="auth-container" class="bg-slate-900/80 border border-slate-800 p-3 rounded-xl space-y-3">
+        <!-- Logged Out State with Google Sign-In -->
+        <div id="logged-out-state" class="text-center">
+          <p class="text-[11px] text-slate-400 mb-2 font-medium">Sign in to unlock TextTide AI</p>
+          <button id="google-login-btn" class="w-full bg-white hover:bg-slate-100 text-slate-800 text-xs font-semibold py-2 px-3 rounded-lg flex items-center justify-center gap-2 shadow transition">
+            <svg class="w-4 h-4" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            Sign in with Google
+          </button>
+        </div>
+
+        <!-- Logged In User Profile -->
+        <div id="logged-in-state" class="hidden text-left space-y-2">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-full bg-indigo-500 text-white font-bold text-[10px] flex items-center justify-center">G3</div>
+            <div class="overflow-hidden">
+              <p class="text-xs font-semibold text-slate-200 truncate">Researcher Demo</p>
+              <p class="text-[9px] text-slate-500 truncate">capstone@g3research.edu</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic Documents List -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between px-2">
+          <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Processed Files</h3>
+          <button id="clear-history-btn" class="text-[10px] text-slate-500 hover:text-red-400 transition">Clear</button>
+        </div>
+        <ul id="file-list" class="space-y-1">
+          <!-- Populated by JavaScript -->
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- System Status Footer -->
+    <div class="p-4 border-t border-slate-800/80 text-[11px] text-slate-500 flex items-center justify-between bg-slate-950">
+      <span id="ai-status">Ready</span>
+      <span id="status-dot" class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+    </div>
+  </aside>
+
+  <!-- ========================================== -->
+  <!-- COLUMN 2: BIGGER MAIN CONTENT              -->
+  <!-- ========================================== -->
+  <main class="flex-1 min-h-screen overflow-y-auto p-8 relative">
+
+    <!-- VIEW A: HOME / DROP FILES FORMAT -->
+    <section id="home-view" class="max-w-3xl mx-auto py-10 space-y-8">
+      
+      <div class="text-center space-y-2">
+        <h1 class="text-4xl font-black text-white tracking-tight">Summarize & Highlight Documents</h1>
+        <p class="text-sm text-slate-400 max-w-lg mx-auto">Drop PDFs, Word documents, PPT text, or TXT files. TextTide extracts key takeaways, writes executive summaries, and highlights critical passages.</p>
+      </div>
+
+      <!-- Drag & Drop Upload Zone -->
+      <div id="drop-zone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 bg-slate-950/40 hover:bg-slate-850/60 rounded-3xl p-10 text-center transition cursor-pointer group flex flex-col items-center justify-center min-h-[280px]">
+        <input type="file" id="file-input" class="hidden" accept=".pdf,.docx,.txt,.doc" />
+        
+        <div class="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl text-indigo-400 group-hover:scale-110 transition duration-300">
+          <i data-lucide="file-up" class="w-10 h-10"></i>
+        </div>
+        
+        <h2 class="mt-5 text-lg font-bold text-slate-200">Drag and drop your file here</h2>
+        <p class="text-xs text-slate-500 mt-1">Supports PDF, DOCX, and Plain Text files</p>
+
+        <button id="browse-btn" class="mt-6 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/20 transition">
+          Browse Computer
+        </button>
+      </div>
+
+      <!-- Processing Loading State Overlay -->
+      <div id="loading-spinner" class="hidden mt-8 text-center space-y-3 bg-slate-950/80 border border-slate-800 rounded-2xl p-6">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent"></div>
+        <p id="loading-text" class="text-xs font-semibold text-indigo-300">Reading document contents...</p>
+      </div>
+
+      <!-- Demo Samples -->
+      <div class="pt-4 border-t border-slate-800/60">
+        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-3">Or try a sample document:</span>
+        <div class="grid grid-cols-2 gap-4">
+          <button id="sample-1-btn" class="p-4 border border-slate-800 bg-slate-950/30 rounded-xl text-left hover:border-indigo-500/50 hover:bg-slate-800/40 transition">
+            <span class="text-xs font-bold text-indigo-400 block mb-1">AI_Research_Proposal.pdf</span>
+            <span class="text-[11px] text-slate-500 block leading-snug">Sample capstone proposal covering neural nets and automated parsing.</span>
+          </button>
+          <button id="sample-2-btn" class="p-4 border border-slate-800 bg-slate-950/30 rounded-xl text-left hover:border-indigo-500/50 hover:bg-slate-800/40 transition">
+            <span class="text-xs font-bold text-indigo-400 block mb-1">Q3_Quarterly_Financials.docx</span>
+            <span class="text-[11px] text-slate-500 block leading-snug">Corporate briefing detailing revenue growth and expense breakdowns.</span>
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- VIEW B: MAGAZINE RESULT LAYOUT -->
+    <section id="results-view" class="hidden max-w-6xl mx-auto space-y-8 pb-16">
+      
+      <!-- Top Action Header -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div>
+          <span class="text-[10px] font-bold text-indigo-400 tracking-wider uppercase">AI Magazine Digest</span>
+          <h1 id="doc-title" class="text-2xl font-black text-white">Document Title</h1>
+        </div>
+        <button id="back-to-upload-btn" class="text-xs font-medium text-slate-400 hover:text-white flex items-center gap-1.5 border border-slate-800 bg-slate-950 px-3 py-2 rounded-xl transition">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Upload
+        </button>
+      </div>
+
+      <!-- Magazine Grid (Large Box + Small Box) -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        
+        <!-- BIGGER BOX: Summarized Version -->
+        <article class="lg:col-span-2 bg-slate-850/90 border border-slate-800 rounded-2xl p-7 shadow-2xl relative overflow-hidden">
+          <div class="absolute top-0 left-0 w-1.5 h-full bg-indigo-500"></div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2 text-xs font-bold text-indigo-400 uppercase tracking-wider">
+              <i data-lucide="book-open" class="w-4 h-4"></i> Executive Summary
+            </div>
+            <span class="text-[10px] bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 px-2 py-0.5 rounded-full font-medium">Bigger View</span>
+          </div>
+          
+          <div id="doc-summary" class="prose prose-invert max-w-none text-slate-300 text-sm leading-relaxed space-y-4">
+            <!-- AI Summary Content -->
+          </div>
+        </article>
+
+        <!-- SMALLER BOX: Quick Important Notes -->
+        <aside class="bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+            <div class="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
+              <i data-lucide="check-circle-2" class="w-4 h-4"></i> Key Notes
+            </div>
+            <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-medium">Small View</span>
+          </div>
+          
+          <ul id="doc-notes" class="space-y-2.5 text-xs text-slate-300">
+            <!-- AI Key Notes -->
+          </ul>
+        </aside>
+
+      </div>
+
+      <!-- HIGHLIGHTED VERSION: Not in a box (Unboxed Layout) -->
+      <div class="pt-8 border-t border-slate-800/80">
+        <div class="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider mb-6">
+          <i data-lucide="highlighter" class="w-4 h-4"></i> Highlighted Passages (Unboxed)
+        </div>
+        
+        <div id="doc-highlights" class="space-y-6 max-w-4xl">
+          <!-- Unboxed quote passages inserted dynamically -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

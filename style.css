@@ -1,0 +1,35 @@
+/* Custom color overrides */
+.bg-slate-850 {
+  background-color: #0f172a;
+}
+
+/* Custom scrollbar styling for sidebar */
+aside::-webkit-scrollbar {
+  width: 4px;
+}
+aside::-webkit-scrollbar-track {
+  background: transparent;
+}
+aside::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+/* Drag & Drop Highlight Glow */
+#drop-zone.drag-active {
+  border-color: #6366f1;
+  background-color: rgba(99, 102, 241, 0.08);
+}
+
+/* Unboxed Highlight Passages styling */
+.highlight-passage {
+  position: relative;
+  padding-left: 1.25rem;
+  border-left: 3px solid #f59e0b;
+  transition: all 0.2s ease-in-out;
+}
+
+.highlight-passage:hover {
+  border-left-color: #fbbf24;
+  transform: translateX(4px);
+}
